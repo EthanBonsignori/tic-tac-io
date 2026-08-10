@@ -1,32 +1,94 @@
 import { useEffect, useState } from "react";
 import { socket } from "./socket";
+import Board from "./Board";
 import "./App.css";
 
 function App() {
-  const [isConnected, setIsConnected] = useState(socket.connected);
+  const [status, setStatus] = useState("waiting");
+  const [board, setBoard] = useState(Array(9).fill(null));
+  const [turn, setTurn] = useState("X");
+  const [winner, setWinner] = useState(null);
+  const [isDraw, setIsDraw] = useState(false);
+  const [mySymbol, setMySymbol] = useState(null);
 
   useEffect(() => {
-    function handleConnect() {
-      setIsConnected(true);
+    function handleGameStart({ symbol }) {
+      setMySymbol(symbol);
+      setStatus("playing");
     }
 
-    function handleDisconnect() {
-      setIsConnected(false);
+    function handleGameState({ board, turn, winner, isDraw }) {
+      setBoard(board);
+      setTurn(turn);
+      setWinner(winner);
+      setIsDraw(isDraw);
+      if (winner || isDraw) setStatus("gameOver");
     }
 
-    socket.on("connect", handleConnect);
-    socket.on("disconnect", handleDisconnect);
+    function handleOpponentLeft() {
+      setStatus("opponentLeft");
+    }
+
+    socket.on("gameStart", handleGameStart);
+    socket.on("gameState", handleGameState);
+    socket.on("opponentLeft", handleOpponentLeft);
+
+    socket.emit("findGame");
 
     return () => {
-      socket.off("connect", handleConnect);
-      socket.off("disconnect", handleDisconnect);
+      socket.off("gameStart", handleGameStart);
+      socket.off("gameState", handleGameState);
+      socket.off("opponentLeft", handleOpponentLeft);
     };
   }, []);
+
+  function handleSquareClick(index) {
+    if (status !== "playing" || turn !== mySymbol || board[index]) return;
+    socket.emit("makeMove", { index });
+  }
+
+  function handlePlayAgain() {
+    setBoard(Array(9).fill(null));
+    setWinner(null);
+    setIsDraw(false);
+    setStatus("waiting");
+    socket.emit("findGame");
+  }
 
   return (
     <div className="app">
       <h1>Tic-Tac-IO</h1>
-      <p>Server status: {isConnected ? "Connected" : "Disconnected"}</p>
+
+      {status === "waiting" && <p>Waiting for an opponent...</p>}
+
+      {status === "playing" && (
+        <>
+          <p>You are {mySymbol}</p>
+          <p>{turn === mySymbol ? "Your turn" : "Opponent's turn"}</p>
+          <Board board={board} onSquareClick={handleSquareClick} />
+        </>
+      )}
+
+      {status === "gameOver" && (
+        <>
+          <Board board={board} onSquareClick={() => {}} />
+          <p>
+            {winner
+              ? winner === mySymbol
+                ? "You win!"
+                : "You lose!"
+              : "It's a draw!"}
+          </p>
+          <button onClick={handlePlayAgain}>Play Again</button>
+        </>
+      )}
+
+      {status === "opponentLeft" && (
+        <>
+          <p>Your opponent disconnected.</p>
+          <button onClick={handlePlayAgain}>Find New Game</button>
+        </>
+      )}
     </div>
   );
 }

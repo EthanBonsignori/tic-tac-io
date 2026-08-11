@@ -1,10 +1,15 @@
 import Square from "./Square";
 
-function Board({ board, onSquareClick }) {
+function Board({ board, onSquareClick, previewSymbol }) {
   return (
     <div className="board">
       {board.map((value, index) => (
-        <Square key={index} value={value} onClick={() => onSquareClick(index)} />
+        <Square
+          key={index}
+          value={value}
+          previewSymbol={previewSymbol}
+          onClick={() => onSquareClick(index)}
+        />
       ))}
     </div>
   );

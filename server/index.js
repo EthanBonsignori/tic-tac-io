@@ -99,6 +99,13 @@ io.on("connection", (socket) => {
     }
   });
 
+  socket.on("leaveGame", () => {
+    if (waitingPlayer && waitingPlayer.id === socket.id) {
+      waitingPlayer = null;
+    }
+    leaveRoom(socket, { notifyOpponent: true });
+  });
+
   socket.on("makeMove", ({ index }) => {
     const roomId = playerRooms.get(socket.id);
     const room = rooms.get(roomId);

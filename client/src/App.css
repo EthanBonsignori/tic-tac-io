@@ -15,15 +15,129 @@
 }
 
 .square {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
   font-size: 2.5rem;
   font-weight: bold;
-  background: #f5f5f5;
-  border: 1px solid #ccc;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  box-sizing: border-box;
   cursor: pointer;
 }
 
-.square:hover {
-  background: #e5e5e5;
+.square-x {
+  color: #ff6f61;
+}
+
+.square-o {
+  color: #14b8a6;
+}
+
+.square-preview {
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.square:hover .square-preview {
+  opacity: 0.35;
+}
+
+.square-active {
+  animation: square-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes square-pulse {
+  0%,
+  100% {
+    border-color: var(--border);
+  }
+  50% {
+    border-color: var(--accent-border);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .square-active {
+    animation: none;
+    border-color: var(--accent-border);
+  }
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 100;
+  animation: modal-fade-in 0.2s ease-out;
+}
+
+.modal-card {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2rem 2.5rem;
+  box-shadow: var(--shadow);
+  text-align: center;
+  animation: modal-scale-in 0.2s ease-out;
+}
+
+.modal-result {
+  margin: 0;
+  font-size: 1.75rem;
+  font-weight: bold;
+  color: var(--text-h);
+}
+
+.modal-result-win {
+  color: #14b8a6;
+}
+
+.modal-result-lose {
+  color: #ff6f61;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 1.25rem;
+}
+
+.modal-actions button {
+  margin-top: 0;
+}
+
+@keyframes modal-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes modal-scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .modal-overlay,
+  .modal-card {
+    animation: none;
+  }
 }
 
 button {
@@ -31,4 +145,27 @@ button {
   padding: 0.5rem 1.5rem;
   font-size: 1rem;
   cursor: pointer;
+}
+
+.menu-buttons {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 2rem;
+}
+
+.menu-buttons button {
+  margin-top: 0;
+  width: 220px;
+}
+
+.menu-label {
+  color: var(--text);
+  font-size: 0.9rem;
+  margin-top: 0.5rem;
+}
+
+.menu-label:first-child {
+  margin-top: 0;
 }

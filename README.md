@@ -1,5 +1,6 @@
 # Tic-Tac-IO
 
+Video Demo: https://youtu.be/UPuL4lfTPtw
 A multiplayer Tic-Tac-Toe game built for CS50's final project, using React and Socket.IO.
 
 ## Project structure

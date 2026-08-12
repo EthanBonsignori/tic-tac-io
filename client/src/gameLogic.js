@@ -21,3 +21,46 @@ export function checkWinner(board) {
 export function isBoardFull(board) {
   return board.every((cell) => cell !== null);
 }
+
+// Endless mode: each player only keeps their most recent ENDLESS_MAX_MARKS
+// marks on the board. marksState tracks each symbol's active square indices,
+// oldest first, so we know which one to fade and then evict.
+export const ENDLESS_MAX_MARKS = 3;
+
+export function createMarksState() {
+  return { X: [], O: [] };
+}
+
+// Places `symbol` at `index`, evicting that symbol's oldest mark once it has
+// more than ENDLESS_MAX_MARKS on the board. Returns the updated board and
+// marksState; non-endless callers can ignore marksState entirely.
+export function placeMark(board, marksState, index, symbol, endless) {
+  const nextBoard = [...board];
+  nextBoard[index] = symbol;
+
+  if (!endless) {
+    return { board: nextBoard, marksState, expiredIndex: null };
+  }
+
+  const queue = [...marksState[symbol], index];
+  let expiredIndex = null;
+  if (queue.length > ENDLESS_MAX_MARKS) {
+    expiredIndex = queue.shift();
+    nextBoard[expiredIndex] = null;
+  }
+
+  return {
+    board: nextBoard,
+    marksState: { ...marksState, [symbol]: queue },
+    expiredIndex,
+  };
+}
+
+// Indices whose mark is the oldest of a full queue — i.e. it will be evicted
+// the next time that symbol moves, so it should render as fading now.
+export function getFadingIndices(marksState, endless) {
+  if (!endless) return [];
+  return ["X", "O"]
+    .filter((symbol) => marksState[symbol].length === ENDLESS_MAX_MARKS)
+    .map((symbol) => marksState[symbol][0]);
+}

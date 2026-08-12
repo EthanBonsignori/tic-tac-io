@@ -66,6 +66,11 @@
   }
 }
 
+.square-fading {
+  opacity: 0.35;
+  transition: opacity 0.6s ease;
+}
+
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -92,6 +97,13 @@
   font-size: 1.75rem;
   font-weight: bold;
   color: var(--text-h);
+}
+
+.modal-subtext {
+  margin: 0.5rem 0 0;
+  font-size: 0.9rem;
+  color: var(--text);
+  max-width: 260px;
 }
 
 .modal-result-win {
@@ -144,7 +156,43 @@ button {
   margin-top: 1rem;
   padding: 0.5rem 1.5rem;
   font-size: 1rem;
+  font-weight: 500;
   cursor: pointer;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text-h);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+button:hover {
+  background: var(--code-bg);
+}
+
+.square:hover {
+  background: var(--bg);
+}
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+
+.btn-primary:hover {
+  background: var(--accent-border);
+  border-color: var(--accent-border);
+}
+
+.btn-secondary {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.btn-secondary:hover {
+  background: var(--code-bg);
+  color: var(--text-h);
 }
 
 .menu-buttons {
@@ -168,4 +216,23 @@ button {
 
 .menu-label:first-child {
   margin-top: 0;
+}
+
+.variant-toggle {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.variant-toggle button {
+  margin-top: 0;
+  width: 106px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+
+.variant-toggle button.variant-active {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+  color: var(--text-h);
 }

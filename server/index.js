@@ -2,7 +2,13 @@ const express = require("express");
 const http = require("http");
 const cors = require("cors");
 const { Server } = require("socket.io");
-const { checkWinner, isBoardFull } = require("./game");
+const {
+  checkWinner,
+  isBoardFull,
+  createMarksState,
+  placeMark,
+  getFadingIndices,
+} = require("./game");
 
 const PORT = process.env.PORT || 3001;
 const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
@@ -15,22 +21,24 @@ const io = new Server(server, {
   cors: { origin: CLIENT_URL },
 });
 
-// The one player waiting for an opponent, or null if no one is waiting.
-let waitingPlayer = null;
+// The one player waiting for an opponent, per mode, or null if no one is waiting.
+const waitingPlayers = { classic: null, endless: null };
 
-// roomId -> { board, turn, players: { X: socketId, O: socketId } }
+// roomId -> { board, turn, players: { X: socketId, O: socketId }, mode, marksState }
 const rooms = new Map();
 
 // socketId -> roomId, so a player's game can be found on a move or disconnect.
 const playerRooms = new Map();
 
-function createRoom(playerX, playerO) {
+function createRoom(playerX, playerO, mode) {
   const roomId = `${playerX.id}#${playerO.id}`;
 
   rooms.set(roomId, {
     board: Array(9).fill(null),
     turn: "X",
     players: { X: playerX.id, O: playerO.id },
+    mode,
+    marksState: createMarksState(),
   });
 
   playerX.join(roomId);
@@ -38,8 +46,8 @@ function createRoom(playerX, playerO) {
   playerRooms.set(playerX.id, roomId);
   playerRooms.set(playerO.id, roomId);
 
-  playerX.emit("gameStart", { symbol: "X" });
-  playerO.emit("gameStart", { symbol: "O" });
+  playerX.emit("gameStart", { symbol: "X", mode });
+  playerO.emit("gameStart", { symbol: "O", mode });
 
   sendGameState(roomId);
 }
@@ -49,12 +57,14 @@ function sendGameState(roomId) {
   if (!room) return;
 
   const winner = checkWinner(room.board);
+  const endless = room.mode === "endless";
 
   io.to(roomId).emit("gameState", {
     board: room.board,
     turn: room.turn,
     winner,
     isDraw: !winner && isBoardFull(room.board),
+    fadingIndices: getFadingIndices(room.marksState, endless),
   });
 }
 
@@ -79,8 +89,19 @@ function leaveRoom(socket, { notifyOpponent }) {
   socket.leave(roomId);
 }
 
+// Clears a socket out of whichever mode's matchmaking queue it's sitting in.
+function leaveQueue(socket) {
+  for (const mode of Object.keys(waitingPlayers)) {
+    if (waitingPlayers[mode] && waitingPlayers[mode].id === socket.id) {
+      waitingPlayers[mode] = null;
+    }
+  }
+}
+
 io.on("connection", (socket) => {
-  socket.on("findGame", () => {
+  socket.on("findGame", ({ mode } = {}) => {
+    const gameMode = mode === "endless" ? "endless" : "classic";
+
     const currentRoomId = playerRooms.get(socket.id);
     const currentRoom = rooms.get(currentRoomId);
     if (currentRoom) {
@@ -90,19 +111,17 @@ io.on("connection", (socket) => {
 
     leaveRoom(socket, { notifyOpponent: false });
 
+    const waitingPlayer = waitingPlayers[gameMode];
     if (waitingPlayer && waitingPlayer.id !== socket.id) {
-      const opponent = waitingPlayer;
-      waitingPlayer = null;
-      createRoom(opponent, socket);
+      waitingPlayers[gameMode] = null;
+      createRoom(waitingPlayer, socket, gameMode);
     } else {
-      waitingPlayer = socket;
+      waitingPlayers[gameMode] = socket;
     }
   });
 
   socket.on("leaveGame", () => {
-    if (waitingPlayer && waitingPlayer.id === socket.id) {
-      waitingPlayer = null;
-    }
+    leaveQueue(socket);
     leaveRoom(socket, { notifyOpponent: true });
   });
 
@@ -118,15 +137,15 @@ io.on("connection", (socket) => {
 
     if (!isMyTurn || !isValidMove || isGameOver) return;
 
-    room.board[index] = symbol;
+    const { board, marksState } = placeMark(room.board, room.marksState, index, symbol, room.mode === "endless");
+    room.board = board;
+    room.marksState = marksState;
     room.turn = symbol === "X" ? "O" : "X";
     sendGameState(roomId);
   });
 
   socket.on("disconnect", () => {
-    if (waitingPlayer && waitingPlayer.id === socket.id) {
-      waitingPlayer = null;
-    }
+    leaveQueue(socket);
     leaveRoom(socket, { notifyOpponent: true });
   });
 });

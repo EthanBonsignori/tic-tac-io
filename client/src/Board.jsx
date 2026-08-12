@@ -1,6 +1,6 @@
 import Square from "./Square";
 
-function Board({ board, onSquareClick, previewSymbol }) {
+function Board({ board, onSquareClick, previewSymbol, fadingIndices = [] }) {
   return (
     <div className="board">
       {board.map((value, index) => (
@@ -8,6 +8,7 @@ function Board({ board, onSquareClick, previewSymbol }) {
           key={index}
           value={value}
           previewSymbol={previewSymbol}
+          isFading={fadingIndices.includes(index)}
           onClick={() => onSquareClick(index)}
         />
       ))}
